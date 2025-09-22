@@ -1,11 +1,11 @@
-import { FaRegFile, FaSearch, FaCodeBranch, FaBug, FaCog } from 'react-icons/fa';
+import { PiDatabase, PiListBullets, PiTable, PiTrophy, PiUpload } from 'react-icons/pi';
 
 const menuItems = [
-    { icon: <FaRegFile size={20} />, label: 'Explorer' },
-    { icon: <FaSearch size={20} />, label: 'Search' },
-    { icon: <FaCodeBranch size={20} />, label: 'Source Control' },
-    { icon: <FaBug size={20} />, label: 'Run & Debug' },
-    { icon: <FaCog size={20} />, label: 'Settings' },
+    { icon: <PiUpload size={20} />, label: '업로드' },
+    { icon: <PiTrophy size={20} />, label: '계산기' },
+    { icon: <PiListBullets size={20} />, label: '성과표' },
+    { icon: <PiTable size={20} />, label: '서열표' },
+    { icon: <PiDatabase size={20} />, label: '데이터베이스' },
 ];
 
 const Menu = () => (
