@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import DJMAX_LOGO from "../assets/djmax_logo.svg";
-import { VscChromeClose, VscChromeMaximize, VscChromeMinimize, VscChromeRestore } from "react-icons/vsc";
+import { VscChromeClose } from "react-icons/vsc";
 import { getCurrentWindow, Window } from "@tauri-apps/api/window";
+import { PiArrowClockwise, PiMinus } from "react-icons/pi";
+import { LuMaximize, LuMinimize } from "react-icons/lu";
 
 const AppHeader: React.FC = () => {
     const windowRef = useRef<Window | null>(null);
@@ -11,6 +13,11 @@ const AppHeader: React.FC = () => {
         const initWindow = async () => {
             const window = await getCurrentWindow();
             windowRef.current = window;
+
+            const unlisten = window.onResized(async () => {
+                const maximized = await window.isMaximized();
+                setIsMaximized(maximized);
+            });
             
             const maximized = await window.isMaximized();
             setIsMaximized(maximized);
@@ -19,15 +26,25 @@ const AppHeader: React.FC = () => {
                 const maximized = await window.isMaximized();
                 setIsMaximized(maximized);
             });
+
+            window.isMaximized().then(setIsMaximized);
+
+            return () => {
+                unlisten.then(f => f());
+            };
         };
 
         initWindow();
     }, []);
 
     return (
-        <header data-tauri-drag-region className="flex justify-center items-center px-4 py-2 select-none gap-2 bg-[#F4F7FF]">
-            <div data-tauri-drag-region className="w-12"></div>
-            <div data-tauri-drag-region className="flex-1 flex justify-center items-center gap-2">
+        <header data-tauri-drag-region className="relative flex justify-between items-center px-4 py-2 select-none bg-[#F4F7FF]">
+            <div className="w-auto"></div> 
+
+            <div 
+                data-tauri-drag-region 
+                className="absolute left-1/2 -translate-x-1/2 flex justify-center items-center gap-2"
+            >
                 <img data-tauri-drag-region
                     src={DJMAX_LOGO} 
                     alt="DJMAX Logo" 
@@ -37,17 +54,21 @@ const AppHeader: React.FC = () => {
                     DJMAX RESPECT V
                 </span>
             </div>
-            <div className="flex items-center gap-2">
+
+            <div className="flex items-center gap-2 z-10">
+                <button onClick={() => window.location.reload()} className="hover:bg-gray-200 p-1 rounded-sm transition-colors">
+                    <PiArrowClockwise className="w-4 h-4 text-gray-600"  />
+                </button>
                 <button onClick={() => windowRef.current?.minimize()} className="hover:bg-gray-200 p-1 rounded-sm transition-colors">
-                    <VscChromeMinimize className="w-4 h-4 text-gray-600" />
+                    <PiMinus className="w-4 h-4 text-gray-600" />
                 </button>
                 { isMaximized ? (
-                    <button onClick={() => windowRef.current?.unmaximize()} className="hover:bg-gray-200 p-1 rounded-sm transition-colors">
-                        <VscChromeRestore className="w-4 h-4 text-gray-600" />
+                    <button onClick={() => windowRef.current?.unmaximize()} className="hover:bg-gray-200 p-1 rounded-sm transition-colors ease-in-out">
+                        <LuMinimize className="w-4 h-4 text-gray-600" />
                     </button>
                 ) : (
                     <button onClick={() => windowRef.current?.maximize()} className="hover:bg-gray-200 p-1 rounded-sm transition-colors">
-                        <VscChromeMaximize className="w-4 h-4 text-gray-600" />
+                        <LuMaximize className="w-4 h-4 text-gray-600" />
                     </button>
                 )}
                 <button onClick={() => windowRef.current?.close()} className="hover:bg-gray-200 p-1 rounded-sm transition-colors">
