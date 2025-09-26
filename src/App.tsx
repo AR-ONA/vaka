@@ -6,7 +6,7 @@ import AppHeader from "./components/Header";
 import Menu from "./components/Menu";
 import LoadingPage from "./pages/LoadingPage";
 import UploadPage from "./pages/UploadPage";
-import { fetch } from "@tauri-apps/plugin-http";
+import { invoke } from "@tauri-apps/api/core";
 
 function App() {
 	const results = useQueries({
@@ -28,6 +28,7 @@ function App() {
 			const timer = setTimeout(() => {
 				setIsLoaderMounted(false);
 				console.log(songData)
+				invoke('init_songs', { songs: songData })
 			}, 500);
 
 			return () => clearTimeout(timer);
@@ -43,7 +44,7 @@ function App() {
 					<main className="flex-1 bg-white overflow-auto rounded-xl">
 						<UploadPage />
 						<div className="p-4">
-							<p className="mb-4">{JSON.stringify(results[2].data)}</p>
+							<p className="mb-4">{JSON.stringify(songData)}</p>
 						</div>
 					</main>
 				</div>
