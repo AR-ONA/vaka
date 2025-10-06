@@ -4,15 +4,15 @@ import { VscChromeClose } from 'react-icons/vsc'
 
 const LoadingPage: React.FC = () => {
   return (
-    <div className="window-border w-full h-full flex flex-col items-center justify-center">
+    <div className="window-border w-full h-full flex flex-col items-center justify-center bg-[var(--ev-c-black)]">
       <button
         onClick={() => {}}
-        className="absolute top-2 right-2 hover:bg-gray-200 p-1 rounded-sm transition-colors z-10"
+        className="absolute top-2 right-2 hover:bg-[var(--ev-c-gray-3)] p-1 rounded-sm transition-colors z-10"
       >
-        <VscChromeClose className="w-4 h-4 text-gray-600" />
+        <VscChromeClose className="w-4 h-4 text-[var(--ev-c-white-soft)]" />
       </button>
       <div>
-        <Zoomies size="100" stroke="5" bgOpacity="0.1" speed="1.4" color="black" />
+        <Zoomies size="100" stroke="5" bgOpacity="0.1" speed="1.4" color="white" />
       </div>
     </div>
   )
