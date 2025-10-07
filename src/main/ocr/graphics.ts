@@ -1,78 +1,97 @@
 import { createCanvas, loadImage } from 'canvas'
 
-// Color
-export interface Color {
-  r: number
-  g: number
-  b: number
-}
-
-// 40x40 Color[] 변환
-export async function getColorsFromLogo(imagePath: string): Promise<Color[]> {
+// 40x40 Image >> Uint8Array
+export async function getColorsFromLogo(imagePath: string): Promise<Uint8Array> {
   const img = await loadImage(imagePath)
   const canvas = createCanvas(40, 40)
   const ctx = canvas.getContext('2d')
   ctx.drawImage(img, 0, 0, 40, 40)
 
-  const colors: Color[] = []
   const imgData = ctx.getImageData(0, 0, 40, 40).data
+  const colors = new Uint8Array(40 * 40 * 3)
+  const width = 40,
+    height = 40
 
-  const tempColors: Color[] = []
-  for (let i = 0; i < imgData.length; i += 4) {
-    tempColors.push({ r: imgData[i], g: imgData[i + 1], b: imgData[i + 2] })
-  }
+  for (let x = 0; x < width; x++) {
+    for (let y = 0; y < height; y++) {
+      const rowMajorIdx = (y * width + x) * 4
+      const colMajorIdx = (x * height + y) * 3
 
-  for (let x = 0; x < 40; x++) {
-    for (let y = 0; y < 40; y++) {
-      const indexInRowMajor = y * 40 + x
-      colors.push(tempColors[indexInRowMajor])
+      colors[colMajorIdx] = imgData[rowMajorIdx] // R
+      colors[colMajorIdx + 1] = imgData[rowMajorIdx + 1] // G
+      colors[colMajorIdx + 2] = imgData[rowMajorIdx + 2] // B
     }
   }
   return colors
 }
 
-// Color[] >> HEX
-export function getHexStringFromColors(colors: Color[]): string {
-  return colors
-    .map(
-      (c) =>
-        c.r.toString(16).padStart(2, '0') +
-        c.g.toString(16).padStart(2, '0') +
-        c.b.toString(16).padStart(2, '0')
-    )
-    .join('')
-}
-
-// HEX >> Color[]
-export function getColorsFromHexString(hex: string): Color[] {
-  const colors: Color[] = []
-  for (let i = 0; i < hex.length; i += 6) {
-    colors.push({
-      r: parseInt(hex.substr(i, 2), 16),
-      g: parseInt(hex.substr(i + 2, 2), 16),
-      b: parseInt(hex.substr(i + 4, 2), 16)
-    })
+// HEX → Uint8Array
+// HEX → Uint8Array
+export function getColorsFromHexString(hex: string): Uint8Array {
+  if (hex.length % 6 !== 0) throw new Error('Hex length must be multiple of 6')
+  const len = hex.length / 2
+  const arr = new Uint8Array(len)
+  for (let i = 0; i < len / 3; i++) {
+    arr[i * 3] = parseInt(hex.substring(i * 6, i * 6 + 2), 16)
+    arr[i * 3 + 1] = parseInt(hex.substring(i * 6 + 2, i * 6 + 4), 16)
+    arr[i * 3 + 2] = parseInt(hex.substring(i * 6 + 4, i * 6 + 6), 16)
   }
-  return colors
+  return arr
 }
 
-// Color >> 밝기(0~255)
-export function getBright(c: Color): number {
-  return Math.max(0, Math.min(255, Math.floor(((c.r + c.g + c.b) / 3) * 2)))
-}
-
-// Color[] >> Gray Vector (16x16)
-export function getGrayVector16by16(colors: Color[]): number[] {
+// Gray Vector 16x16
+export function getGrayVector16by16(colors: Uint8Array): number[] {
   const vec: number[] = []
   for (let y = 0; y < 16; y++) {
     for (let x = 0; x < 16; x++) {
       const srcX = Math.floor((x * 40) / 16)
       const srcY = Math.floor((y * 40) / 16)
-      const c = colors[srcY * 40 + srcX]
-      vec.push(Math.floor((c.r + c.g + c.b) / 3))
+      const idx = (srcY * 40 + srcX) * 3
+      const r = colors[idx],
+        g = colors[idx + 1],
+        b = colors[idx + 2]
+      vec.push(Math.floor((r + g + b) / 3))
     }
   }
   return vec
+}
+
+// 평균 Hash
+export function getAverageHashFromLogoColor(colors: Uint8Array): number[] {
+  const len = colors.length / 3
+  const brightness: number[] = []
+  let sum = 0
+  for (let i = 0; i < len; i++) {
+    const b = (colors[i * 3] + colors[i * 3 + 1] + colors[i * 3 + 2]) / 3 / 255
+    brightness.push(b)
+    sum += b
+  }
+  const avg = sum / len
+  return brightness.map((b) => (b > avg ? 1 : 0))
+}
+
+// 색상 유사도 (0~1)
+export function colorSimilarity(aIdx: number, bIdx: number, a: Uint8Array, b: Uint8Array): number {
+  const dr = a[aIdx] - b[bIdx]
+  const dg = a[aIdx + 1] - b[bIdx + 1]
+  const db = a[aIdx + 2] - b[bIdx + 2]
+  const dist = Math.sqrt(dr * dr + dg * dg + db * db) / Math.sqrt(255 * 255 * 3)
+  return 1 - dist
+}
+
+export function diffLogoColors(a: Uint8Array, b: Uint8Array): number {
+  const len = a.length / 3
+  let simSum = 0
+  for (let i = 0; i < len; i++) {
+    simSum += colorSimilarity(i * 3, i * 3, a, b)
+  }
+  return simSum / len
+}
+
+export function diffHash(hashA: number[], hashB: number[]): number {
+  let diff = 0
+  for (let i = 0; i < hashA.length; i++) if (hashA[i] !== hashB[i]) diff++
+  return 1 - diff / hashA.length
 }
 
 // 코사인 유사도
@@ -87,42 +106,4 @@ export function cosineSimilarity(vecA: number[], vecB: number[]): number {
   }
   if (dot === 0 || normA === 0 || normB === 0) return 0
   return dot / Math.sqrt(normA * normB)
-}
-
-// 평균 컬러 Hash
-export function getAverageHashFromLogoColor(colors: Color[]): number[] {
-  const brightness = colors.map((c) => (c.r + c.g + c.b) / 3 / 255)
-  const avg = brightness.reduce((a, b) => a + b, 0) / brightness.length
-  return brightness.map((b) => (b > avg ? 1 : 0))
-}
-
-// ./graphics.ts의 diffLogoColors 함수 (유사도를 반환하도록 수정)
-export function diffLogoColors(a: Color[], b: Color[]): number {
-  let simSum = 0
-  let num2 = 0
-
-  for (let i = 0; i < a.length; i++) {
-    const x = Math.floor(i / 40)
-    const y = i % 40
-    if (x + y >= 11) {
-      num2++
-      simSum += colorSimilarity(a[i], b[i])
-    }
-  }
-  return simSum / num2
-}
-
-export function diffHash(hashA: number[], hashB: number[]): number {
-  let diff = 0
-  for (let i = 0; i < hashA.length; i++) if (hashA[i] !== hashB[i]) diff++
-  return 1 - diff / hashA.length
-}
-
-// 색상 유사도
-export function colorSimilarity(a: Color, b: Color): number {
-  const dr = a.r - b.r
-  const dg = a.g - b.g
-  const db = a.b - b.b
-  const dist = Math.sqrt(dr * dr + dg * dg + db * db) / Math.sqrt(255 * 255 * 3) // 0~1
-  return 1 - dist
 }

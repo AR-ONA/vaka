@@ -1,7 +1,7 @@
 import { testAlbumArtOCR } from './albumArtOCR'
-import { getColorsFromHexString, getAverageHashFromLogoColor, Color } from './graphics'
+import { getColorsFromHexString, getAverageHashFromLogoColor } from './graphics'
 
-export const albumArtColors: Color[][] = []
+export const albumArtColors: Uint8Array[] = []
 export const albumArtHashs: number[][] = []
 
 export function setAlbumArtDatas(jacketList: string[]): void {
@@ -13,9 +13,10 @@ export function setAlbumArtDatas(jacketList: string[]): void {
       console.warn('wrong HEX length:', hex.length)
       continue
     }
-    const colors = getColorsFromHexString(hex)
-    albumArtColors.push(colors)
-    albumArtHashs.push(getAverageHashFromLogoColor(colors))
+
+    const colorsUint8Array = getColorsFromHexString(hex)
+    albumArtColors.push(colorsUint8Array)
+    albumArtHashs.push(getAverageHashFromLogoColor(colorsUint8Array))
   }
 
   console.log('Colors length: ', albumArtColors.length)

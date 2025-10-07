@@ -1,6 +1,5 @@
 import { albumArtColors, albumArtHashs } from './albumArtData'
 import {
-  Color,
   getAverageHashFromLogoColor,
   cosineSimilarity,
   diffHash,
@@ -8,43 +7,44 @@ import {
   getColorsFromLogo
 } from './graphics'
 
-export function albumArtOCR(logoColors: Color[]): number {
+// logoColors: Uint8Array
+export function albumArtOCR(logoColors: Uint8Array): number {
   if (albumArtColors.length === 0) return -1
 
   const logoHash = getAverageHashFromLogoColor(logoColors)
 
   let bestIndex = -1
-  let bestScore = 0
-  let bestDiffC = 0
-  // let bestCosine = 0
-  // let bestDiffH = 0
+  let bestScore = -Infinity
+  let bestSimC = -1
 
   for (let i = 0; i < albumArtColors.length; i++) {
     const colors = albumArtColors[i]
     const hash = albumArtHashs[i]
 
     const diffC = diffLogoColors(logoColors, colors)
-    if (diffC < 0.8) continue
-
+    const simC = diffC
     const cosine = cosineSimilarity(logoHash, hash)
     const diffH = diffHash(logoHash, hash)
-    const score = diffC + cosine + diffH
+    const score = simC + cosine + diffH
 
-    if (diffC > bestDiffC) {
+    if (simC > 0.8) {
+      console.log(
+        `Index ${i}: simC=${simC.toFixed(3)}, cosine=${cosine.toFixed(3)}, diffH=${diffH.toFixed(3)}, score=${score.toFixed(3)}`
+      )
+    }
+
+    if (simC > bestSimC) {
       bestIndex = i
       bestScore = score
-      bestDiffC = diffC
-      // bestCosine = cosine
-      // bestDiffH = diffH
-      console.log(`Index ${i}: diffC=${diffC}, cosine=${cosine}, diffH=${diffH}, score=${score}`)
+      bestSimC = simC
     }
   }
 
   if (
-    bestDiffC > 0.875 ||
-    (bestDiffC > 0.865 && bestScore > 2.45) ||
-    (bestDiffC > 0.845 && bestScore > 2.48) ||
-    (bestDiffC > 0.8 && bestIndex === 197)
+    bestSimC > 0.875 ||
+    (bestSimC > 0.865 && bestScore > 2.45) ||
+    (bestSimC > 0.845 && bestScore > 2.48) ||
+    (bestSimC > 0.8 && bestIndex === 197)
   ) {
     return bestIndex
   }
