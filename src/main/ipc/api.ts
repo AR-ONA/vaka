@@ -1,4 +1,17 @@
 import { ipcMain } from 'electron'
+import { setAlbumArtDatas } from '../ocr/albumArtData'
+
+interface UpdateDataResponse {
+  success: boolean
+  autoUpdate?: {
+    version: string
+    downloadFiles: { url: string; fileName: string }[]
+    runFileName: string
+  }
+  jacketList?: string[]
+  titleList?: string[]
+  notice?: string
+}
 
 export function registerApiIPC(): void {
   ipcMain.handle('load-data', async () => {
@@ -18,6 +31,27 @@ export function registerApiIPC(): void {
         boardsResp.json(),
         tiersResp.json()
       ])
+
+      const updateResp = await fetch('https://v-archive.net/client/update', { method: 'GET' })
+      if (!updateResp.ok) throw new Error('Failed to fetch update info')
+      const updateData: UpdateDataResponse = await updateResp.json()
+      const autoUpdateVersion = updateData.autoUpdate?.version || '0.0'
+
+      const jacketResp = await fetch('https://v-archive.net/client/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userNo: 0,
+          version: autoUpdateVersion,
+          noticeVersion: '0',
+          lastUpdate: 0
+        })
+      })
+      if (!jacketResp.ok) throw new Error('Failed to fetch jacketList')
+      const jacketData: UpdateDataResponse = await jacketResp.json()
+      const jacketList = jacketData.jacketList || []
+
+      setAlbumArtDatas(jacketList)
 
       return { songs, boards, tiers }
     } catch (error) {

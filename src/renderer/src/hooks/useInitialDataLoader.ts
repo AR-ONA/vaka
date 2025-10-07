@@ -19,6 +19,7 @@ export const useInitialDataLoader = (): DataLoaderState => {
       try {
         const loadedData = await window.api.loadData()
         setData(loadedData)
+        console.log(loadedData)
       } catch (error) {
         console.error('데이터 로드 실패:', error)
       } finally {
