@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron'
-import { setAlbumArtDatas } from '../ocr/albumArtData'
+import { checkAndCreateCache } from '../ocr/albumArtData'
 
 interface UpdateDataResponse {
   success: boolean
@@ -51,7 +51,7 @@ export function registerApiIPC(): void {
       const jacketData: UpdateDataResponse = await jacketResp.json()
       const jacketList = jacketData.jacketList || []
 
-      setAlbumArtDatas(jacketList)
+      await checkAndCreateCache(jacketList)
 
       return { songs, boards, tiers }
     } catch (error) {

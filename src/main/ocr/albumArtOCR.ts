@@ -1,4 +1,4 @@
-import { albumArtColors, albumArtHashs } from './albumArtData'
+import { loadAlbumArtColorsFromCache, loadAlbumArtHashFromCache, TOTAL_INDEX_COUNT } from './albumArtData'
 import {
   getAverageHashFromLogoColor,
   cosineSimilarity,
@@ -7,54 +7,63 @@ import {
   getColorsFromLogo
 } from './graphics'
 
-// logoColors: Uint8Array
-export function albumArtOCR(logoColors: Uint8Array): number {
-  if (albumArtColors.length === 0) return -1
+const HASH_THRESHOLD = 1.75
+const COLOR_THRESHOLD = 0.8
+const MAX_CANDIDATES = 10 // 해시 비교 상위 N개
 
-  const logoHash = getAverageHashFromLogoColor(logoColors)
+export async function albumArtOCR(logoColors: Uint8Array): Promise<number> {
+  const logoHashs = getAverageHashFromLogoColor(logoColors)
+
+  const candidates: { index: number; score: number }[] = []
+
+  // 모든 캐시 로드
+  const indices = Array.from({ length: TOTAL_INDEX_COUNT }, (_, i) => i)
+  const results = await Promise.allSettled(
+    indices.map(async (index) => {
+      const hashs = await loadAlbumArtHashFromCache(index)
+      const sim = cosineSimilarity(logoHashs, hashs)
+      const diff = diffHash(logoHashs, hashs)
+      const score = sim + diff
+      if (score >= HASH_THRESHOLD) return { index, score }
+      return null
+    })
+  )
+
+  for (const r of results) {
+    if (r.status === 'fulfilled' && r.value) candidates.push(r.value)
+  }
+
+  if (candidates.length === 0) return -1
+
+  // 상위 N개 후보 비교
+  candidates.sort((a, b) => b.score - a.score)
+  console.log(candidates.slice(0, MAX_CANDIDATES))
+  const topCandidates = candidates.slice(0, MAX_CANDIDATES)
 
   let bestIndex = -1
-  let bestScore = -Infinity
-  let bestSimC = -1
+  let bestSimC = 0
 
-  for (let i = 0; i < albumArtColors.length; i++) {
-    const colors = albumArtColors[i]
-    const hash = albumArtHashs[i]
+  for (const { index } of topCandidates) {
+    try {
+      const colors = await loadAlbumArtColorsFromCache(index)
+      const colorSim = diffLogoColors(logoColors, colors)
+      if (colorSim > bestSimC) {
+        bestSimC = colorSim
+        bestIndex = index
+      }
 
-    const diffC = diffLogoColors(logoColors, colors)
-    const simC = diffC
-    const cosine = cosineSimilarity(logoHash, hash)
-    const diffH = diffHash(logoHash, hash)
-    const score = simC + cosine + diffH
-
-    if (simC > 0.8) {
-      console.log(
-        `Index ${i}: simC=${simC.toFixed(3)}, cosine=${cosine.toFixed(3)}, diffH=${diffH.toFixed(3)}, score=${score.toFixed(3)}`
-      )
-    }
-
-    if (simC > bestSimC) {
-      bestIndex = i
-      bestScore = score
-      bestSimC = simC
+      if (colorSim >= 0.9) return index
+    } catch {
+      continue
     }
   }
 
-  if (
-    bestSimC > 0.875 ||
-    (bestSimC > 0.865 && bestScore > 2.45) ||
-    (bestSimC > 0.845 && bestScore > 2.48) ||
-    (bestSimC > 0.8 && bestIndex === 197)
-  ) {
-    return bestIndex
-  }
-
-  return -1
+  return bestSimC >= COLOR_THRESHOLD ? bestIndex : -1
 }
 
 export async function testAlbumArtOCR(): Promise<void> {
   const logoColors = await getColorsFromLogo('C:\\Users\\heebb\\Downloads\\553.jpg')
-  const index = albumArtOCR(logoColors)
+  const index = await albumArtOCR(logoColors)
 
   if (index === -1) {
     console.log('No matching AlbumArt')

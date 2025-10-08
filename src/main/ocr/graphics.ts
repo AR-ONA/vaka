@@ -25,8 +25,8 @@ export async function getColorsFromLogo(imagePath: string): Promise<Uint8Array> 
   return colors
 }
 
-// HEX → Uint8Array
-// HEX → Uint8Array
+// HEX >> Uint8Array
+// HEX >> Uint8Array
 export function getColorsFromHexString(hex: string): Uint8Array {
   if (hex.length % 6 !== 0) throw new Error('Hex length must be multiple of 6')
   const len = hex.length / 2
