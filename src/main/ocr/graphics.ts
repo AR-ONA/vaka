@@ -1,6 +1,6 @@
 import { createCanvas, loadImage } from 'canvas'
 
-// 40x40 Image >> Uint8Array
+// 40x40 Image >> Uint8Array (RGB, Col-Major)
 export async function getColorsFromLogo(imagePath: string): Promise<Uint8Array> {
   const img = await loadImage(imagePath)
   const canvas = createCanvas(40, 40)
@@ -26,7 +26,6 @@ export async function getColorsFromLogo(imagePath: string): Promise<Uint8Array> 
 }
 
 // HEX >> Uint8Array
-// HEX >> Uint8Array
 export function getColorsFromHexString(hex: string): Uint8Array {
   if (hex.length % 6 !== 0) throw new Error('Hex length must be multiple of 6')
   const len = hex.length / 2
@@ -39,7 +38,7 @@ export function getColorsFromHexString(hex: string): Uint8Array {
   return arr
 }
 
-// Gray Vector 16x16
+// Gray Vector 16x16 (Fixed 40x40 RGB Input)
 export function getGrayVector16by16(colors: Uint8Array): number[] {
   const vec: number[] = []
   for (let y = 0; y < 16; y++) {
@@ -88,14 +87,14 @@ export function diffLogoColors(a: Uint8Array, b: Uint8Array): number {
   return simSum / len
 }
 
-export function diffHash(hashA: number[], hashB: number[]): number {
+export function diffHash(hashA: number[] | Uint8Array, hashB: number[] | Uint8Array): number {
   let diff = 0
   for (let i = 0; i < hashA.length; i++) if (hashA[i] !== hashB[i]) diff++
   return 1 - diff / hashA.length
 }
 
 // 코사인 유사도
-export function cosineSimilarity(vecA: number[], vecB: number[]): number {
+export function cosineSimilarity(vecA: number[] | Uint8Array, vecB: number[] | Uint8Array): number {
   let dot = 0,
     normA = 0,
     normB = 0

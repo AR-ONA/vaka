@@ -1,3 +1,8 @@
+import { ipcMain } from 'electron'
+import { initNumOCR } from '../ocr/process/numOCR'
+
 export function registerOcrIPC(): void {
-  return
+  ipcMain.handle('init-font-data', async () => {
+    await initNumOCR()
+  })
 }

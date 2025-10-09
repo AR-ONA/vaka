@@ -17,6 +17,7 @@ export const useInitialDataLoader = (): DataLoaderState => {
   useEffect(() => {
     const loadData = async (): Promise<void> => {
       try {
+        await window.api.initFontData()
         const loadedData = await window.api.loadData()
         setData(loadedData)
         console.log(loadedData)

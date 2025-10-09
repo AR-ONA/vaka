@@ -6,4 +6,5 @@ export interface Api {
     boards: unknown
     tiers: unknown
   }>
+  initFontData: () => Promise<void>
 }

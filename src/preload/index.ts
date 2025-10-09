@@ -4,7 +4,8 @@ import { Api } from '../types/api'
 
 // Custom APIs for renderer
 const api: Api = {
-  loadData: () => ipcRenderer.invoke('load-data')
+  loadData: () => ipcRenderer.invoke('load-data'),
+  initFontData: () => ipcRenderer.invoke('init-font-data')
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
