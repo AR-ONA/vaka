@@ -1,6 +1,5 @@
 import { ipcMain } from 'electron'
-import { loadAlbumArtData } from '../ocr/data/albumArtData'
-// import { testAlbumArtOCR } from '../ocr/process/albumArtOCR'
+import { albumArtColors, loadAlbumArtData } from '../ocr/data/albumArtData'
 
 interface UpdateDataResponse {
   success: boolean
@@ -33,28 +32,30 @@ export function registerApiIPC(): void {
         tiersResp.json()
       ])
 
-      const updateResp = await fetch('https://v-archive.net/client/update', { method: 'GET' })
-      if (!updateResp.ok) throw new Error('Failed to fetch update info')
-      const updateData: UpdateDataResponse = await updateResp.json()
-      const autoUpdateVersion = updateData.autoUpdate?.version || '0.0'
+      if (albumArtColors.length == 0) {
+        const updateResp = await fetch('https://v-archive.net/client/update', { method: 'GET' })
+        if (!updateResp.ok) throw new Error('Failed to fetch update info')
+        const updateData: UpdateDataResponse = await updateResp.json()
+        const autoUpdateVersion = updateData.autoUpdate?.version || '0.0'
 
-      const jacketResp = await fetch('https://v-archive.net/client/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userNo: 0,
-          version: autoUpdateVersion,
-          noticeVersion: '0',
-          lastUpdate: 0
+        const jacketResp = await fetch('https://v-archive.net/client/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userNo: 0,
+            version: autoUpdateVersion,
+            noticeVersion: '0',
+            lastUpdate: 0
+          })
         })
-      })
-      if (!jacketResp.ok) throw new Error('Failed to fetch jacketList')
-      const jacketData: UpdateDataResponse = await jacketResp.json()
-      const jacketList = jacketData.jacketList || []
+        if (!jacketResp.ok) throw new Error('Failed to fetch jacketList')
+        const jacketData: UpdateDataResponse = await jacketResp.json()
+        const jacketList = jacketData.jacketList || []
 
-      await loadAlbumArtData(jacketList)
-      // await testAlbumArtOCR()
-
+        await loadAlbumArtData(jacketList)
+      } else {
+        console.log('AlbumArt Data already loaded, skipping')
+      }
       return { songs, boards, tiers }
     } catch (error) {
       console.error('Failed to load data:', error)

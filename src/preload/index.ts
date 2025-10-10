@@ -5,7 +5,24 @@ import { Api } from '../types/api'
 // Custom APIs for renderer
 const api: Api = {
   loadData: () => ipcRenderer.invoke('load-data'),
-  initFontData: () => ipcRenderer.invoke('init-font-data')
+  initNumOCR: () => ipcRenderer.invoke('init-num-ocr'),
+
+  minimize: () => ipcRenderer.invoke('window-minimize'),
+  maximize: () => ipcRenderer.invoke('window-maximize'),
+  unmaximize: () => ipcRenderer.invoke('window-unmaximize'),
+  close: () => ipcRenderer.invoke('window-close'),
+
+  onWindowStateChange: (
+    callback: (state: 'maximized' | 'minimized' | 'normal') => void
+  ): (() => void) => {
+    const listener = (_: unknown, state: 'maximized' | 'minimized' | 'normal'): void =>
+      callback(state)
+    ipcRenderer.on('window-state-changed', listener)
+
+    return () => {
+      ipcRenderer.removeListener('window-state-changed', listener)
+    }
+  }
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

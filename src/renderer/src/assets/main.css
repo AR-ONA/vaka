@@ -1,14 +1,15 @@
 @import './base.css';
 @import "tailwindcss";
 
-body {
-  display: flex;
-  overflow: hidden;
-  background-size: cover;
+html, body, #root {
+  height: 100%;
+  width: 100%;
 }
 
-#root {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
+.drag-header {
+  -webkit-app-region: drag;
+}
+
+.no-drag-header {
+  -webkit-app-region: no-drag;
 }

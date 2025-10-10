@@ -6,5 +6,13 @@ export interface Api {
     boards: unknown
     tiers: unknown
   }>
-  initFontData: () => Promise<void>
+  initNumOCR: () => Promise<void>
+
+  minimize: () => void
+  maximize: () => void
+  unmaximize: () => void
+  close: () => void
+  onWindowStateChange: (
+    callback: (state: 'maximized' | 'minimized' | 'normal') => void
+  ) => () => void
 }

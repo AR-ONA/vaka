@@ -6,7 +6,9 @@ const LoadingPage: React.FC = () => {
   return (
     <div className="window-border w-full h-full flex flex-col items-center justify-center bg-[var(--ev-c-black)]">
       <button
-        onClick={() => {}}
+        onClick={() => {
+          window.api.close()
+        }}
         className="absolute top-2 right-2 hover:bg-[var(--ev-c-gray-3)] p-1 rounded-sm transition-colors z-10"
       >
         <VscChromeClose className="w-4 h-4 text-[var(--ev-c-white-soft)]" />
