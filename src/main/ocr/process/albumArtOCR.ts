@@ -26,12 +26,6 @@ export function albumArtOCR(logoColors: Uint8Array): number {
     const diffH = diffHash(logoHash, hash)
     const score = simC + cosine + diffH
 
-    if (simC > 0.8) {
-      console.log(
-        `Index ${i}: simC=${simC.toFixed(3)}, cosine=${cosine.toFixed(3)}, diffH=${diffH.toFixed(3)}, score=${score.toFixed(3)}`
-      )
-    }
-
     if (simC > bestSimC) {
       bestIndex = i
       bestScore = score
@@ -52,9 +46,8 @@ export function albumArtOCR(logoColors: Uint8Array): number {
 }
 
 export async function testAlbumArtOCR(): Promise<void> {
+  const logoColors = await getColorsFromLogo('C:\\Users\\heebb\\Downloads\\470.jpg')
   const startTime = performance.now()
-
-  const logoColors = await getColorsFromLogo('C:\\Users\\heebb\\Downloads\\476.jpg')
   const index = await albumArtOCR(logoColors)
 
   if (index === -1) {

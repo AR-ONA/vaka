@@ -74,17 +74,23 @@ export function colorSimilarity(aIdx: number, bIdx: number, a: Uint8Array, b: Ui
   const dr = a[aIdx] - b[bIdx]
   const dg = a[aIdx + 1] - b[bIdx + 1]
   const db = a[aIdx + 2] - b[bIdx + 2]
-  const dist = Math.sqrt(dr * dr + dg * dg + db * db) / Math.sqrt(255 * 255 * 3)
-  return 1 - dist
+
+  const distSq = dr * dr + dg * dg + db * db
+  // 최대 거리 255^2 * 3 = 195075
+  return 1 - distSq / 195075
 }
 
 export function diffLogoColors(a: Uint8Array, b: Uint8Array): number {
-  const len = a.length / 3
-  let simSum = 0
-  for (let i = 0; i < len; i++) {
-    simSum += colorSimilarity(i * 3, i * 3, a, b)
+  const len = a.length
+  let sum = 0
+  for (let i = 0; i < len; i += 3) {
+    const dr = a[i] - b[i]
+    const dg = a[i + 1] - b[i + 1]
+    const db = a[i + 2] - b[i + 2]
+    const sim = 1 - (dr * dr + dg * dg + db * db) / 195075 // 255² * 3
+    sum += sim
   }
-  return simSum / len
+  return sum / (len / 3)
 }
 
 export function diffHash(hashA: number[] | Uint8Array, hashB: number[] | Uint8Array): number {
