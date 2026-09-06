@@ -1,8 +1,14 @@
 import { ipcMain } from 'electron'
-import { albumArtColors, loadAlbumArtData } from '../ocr/data/albumArtData'
+import {
+  albumArtColors,
+  loadAlbumArtData,
+  loadAlbumArtDataFromFile,
+  readJacketDataVersion
+} from '../ocr/data/albumArtData'
 
 interface UpdateDataResponse {
   success: boolean
+  lastUpdate?: number
   autoUpdate?: {
     version: string
     downloadFiles: { url: string; fileName: string }[]
@@ -37,6 +43,7 @@ export function registerApiIPC(): void {
         if (!updateResp.ok) throw new Error('Failed to fetch update info')
         const updateData: UpdateDataResponse = await updateResp.json()
         const autoUpdateVersion = updateData.autoUpdate?.version || '0.0'
+        const savedLastUpdate = readJacketDataVersion()
 
         const jacketResp = await fetch('https://v-archive.net/client/update', {
           method: 'POST',
@@ -45,14 +52,19 @@ export function registerApiIPC(): void {
             userNo: 0,
             version: autoUpdateVersion,
             noticeVersion: '0',
-            lastUpdate: 0
+            lastUpdate: savedLastUpdate
           })
         })
         if (!jacketResp.ok) throw new Error('Failed to fetch jacketList')
         const jacketData: UpdateDataResponse = await jacketResp.json()
         const jacketList = jacketData.jacketList || []
+        const lastUpdate = jacketData.lastUpdate ?? savedLastUpdate
 
-        await loadAlbumArtData(jacketList)
+        if (jacketList.length > 0) {
+          await loadAlbumArtData(jacketList, lastUpdate)
+        } else {
+          loadAlbumArtDataFromFile(lastUpdate)
+        }
       } else {
         console.log('AlbumArt Data already loaded, skipping')
       }
