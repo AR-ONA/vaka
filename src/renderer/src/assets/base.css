@@ -34,12 +34,15 @@
   --color-text: var(--ev-c-text-1);
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  font-weight: normal;
+/* 레이어 밖에 두면 Tailwind 유틸리티(mb-*, mx-auto, font-semibold 등)를 모두 덮어쓴다 */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    font-weight: normal;
+  }
 }
 
 ul {
