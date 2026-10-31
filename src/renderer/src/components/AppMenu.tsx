@@ -13,7 +13,7 @@ const menuItems = [
   { icon: <PiUpload size={20} />, label: '업로드' },
   { icon: <PiTrophy size={20} />, label: '베스트' },
   { icon: <PiListBullets size={20} />, label: '성과표' },
-  { icon: <PiTable size={20} />, label: '서열표' },
+  { icon: <PiTable size={20} />, label: '상수표' },
   { icon: <PiDatabase size={20} />, label: '데이터베이스' }
 ]
 
