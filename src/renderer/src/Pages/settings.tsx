@@ -38,6 +38,9 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title
   </section>
 )
 
+const GUIDELINE_URL =
+  'https://docs.google.com/document/d/e/2PACX-1vSIv-r4O2G99EmEr1tPFZnxOo1Cp9XQtbGeLVT76l18KnvBuV0gnHz4Gm-oYJP2aADg4wqqVe5WUR2j/pub'
+
 const CACHE_LABELS: Record<CacheKind, string> = {
   jackets: '자켓 이미지',
   constants: '상수표',
@@ -253,6 +256,26 @@ const SettingsPage: React.FC = () => {
           ))}
         </ul>
         <p className="text-sm opacity-70">{cacheMessage}</p>
+      </Section>
+
+      <Section title="정보">
+        <div className="space-y-1.5 text-xs leading-relaxed opacity-70">
+          <p>© NEOWIZ, DJMAX. All rights reserved.</p>
+          <p>
+            이 앱은 NEOWIZ의 DJMAX 게임 IP를 활용하여 제작되었습니다.
+            이 앱은 NEOWIZ와 제휴, 후원, 공인 관계가 없습니다.
+          </p>
+          <p>
+            <a
+              href={GUIDELINE_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="underline hover:opacity-100"
+            >
+              DJMAX IP를 활용한 2차 창작 가이드라인
+            </a>
+          </p>
+        </div>
       </Section>
     </div>
   )
