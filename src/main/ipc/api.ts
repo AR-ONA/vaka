@@ -20,7 +20,7 @@ interface UpdateDataResponse {
 }
 
 export function registerApiIPC(): void {
-  ipcMain.handle('load-data', async () => {
+  ipcMain.handle('load-data', async (event) => {
     try {
       const [songsResp, boardsResp, tiersResp] = await Promise.all([
         fetch('https://v-archive.net/db/songs.json', { method: 'GET' }),
@@ -60,10 +60,13 @@ export function registerApiIPC(): void {
         const jacketList = jacketData.jacketList || []
         const lastUpdate = jacketData.lastUpdate ?? savedLastUpdate
 
-        if (jacketList.length > 0) {
-          await loadAlbumArtData(jacketList, lastUpdate)
+        const titleList = jacketData.titleList ?? []
+        const onProgress = (done: number, total: number): void =>
+          event.sender.send('jacket-progress', { done, total })
+        if (jacketList.length > 0 && titleList.length > 0) {
+          await loadAlbumArtData(titleList, lastUpdate, onProgress)
         } else {
-          loadAlbumArtDataFromFile(lastUpdate)
+          await loadAlbumArtDataFromFile(lastUpdate, onProgress)
         }
       } else {
         console.log('AlbumArt Data already loaded, skipping')

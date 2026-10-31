@@ -1,9 +1,5 @@
-export interface SongData {
-  data: Song[]
-}
-
 export interface Song {
-  title: string
+  title: number // 곡 번호. 자켓 인덱스와 같다
   name: string
   composer: string
   dlcCode: string

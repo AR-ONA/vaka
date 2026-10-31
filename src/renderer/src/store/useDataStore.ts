@@ -1,15 +1,15 @@
 import { create } from 'zustand'
-import { SongData } from 'src/types/song'
+import { Song } from 'src/types/song'
 
 interface DataState {
-  songs: SongData
+  songs: Song[]
   boards: unknown
   tiers: unknown
-  setData: (data: { songs: SongData; boards: unknown; tiers: unknown }) => void
+  setData: (data: { songs: Song[]; boards: unknown; tiers: unknown }) => void
 }
 
 export const useDataStore = create<DataState>((set) => ({
-  songs: { data: [] },
+  songs: [],
   boards: {},
   tiers: {},
   setData: (data) => set(data)

@@ -1,11 +1,13 @@
-import { createCanvas, loadImage } from 'canvas'
+import { createCanvas, Image, loadImage } from 'canvas'
 
-// 40x40 Image >> Uint8Array (RGB, Col-Major)
-export async function getColorsFromLogo(imagePath: string): Promise<Uint8Array> {
-  const img = await loadImage(imagePath)
+export type Region = [x: number, y: number, width: number, height: number]
+
+// 이미지(의 일부 영역) 40x40 >> Uint8Array (RGB, Col-Major)
+export function getColorsFromImage(img: Image, region?: Region): Uint8Array {
+  const [sx, sy, sw, sh] = region ?? [0, 0, img.width, img.height]
   const canvas = createCanvas(40, 40)
   const ctx = canvas.getContext('2d')
-  ctx.drawImage(img, 0, 0, 40, 40)
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, 40, 40)
 
   const imgData = ctx.getImageData(0, 0, 40, 40).data
   const colors = new Uint8Array(40 * 40 * 3)
@@ -25,90 +27,28 @@ export async function getColorsFromLogo(imagePath: string): Promise<Uint8Array> 
   return colors
 }
 
-// HEX >> Uint8Array
-export function getColorsFromHexString(hex: string): Uint8Array {
-  if (hex.length % 6 !== 0) throw new Error('Hex length must be multiple of 6')
-  const len = hex.length / 2
-  const arr = new Uint8Array(len)
-  for (let i = 0; i < len / 3; i++) {
-    arr[i * 3] = parseInt(hex.substring(i * 6, i * 6 + 2), 16)
-    arr[i * 3 + 1] = parseInt(hex.substring(i * 6 + 2, i * 6 + 4), 16)
-    arr[i * 3 + 2] = parseInt(hex.substring(i * 6 + 4, i * 6 + 6), 16)
-  }
-  return arr
+export async function getColorsFromLogo(imagePath: string): Promise<Uint8Array> {
+  return getColorsFromImage(await loadImage(imagePath))
 }
 
-// Gray Vector 16x16 (Fixed 40x40 RGB Input)
-export function getGrayVector16by16(colors: Uint8Array): number[] {
-  const vec: number[] = []
-  for (let y = 0; y < 16; y++) {
-    for (let x = 0; x < 16; x++) {
-      const srcX = Math.floor((x * 40) / 16)
-      const srcY = Math.floor((y * 40) / 16)
-      const idx = (srcY * 40 + srcX) * 3
-      const r = colors[idx],
-        g = colors[idx + 1],
-        b = colors[idx + 2]
-      vec.push(Math.floor((r + g + b) / 3))
-    }
+export function normalizeColors(colors: Uint8Array): Float32Array {
+  let mean = 0
+  for (let i = 0; i < colors.length; i++) mean += colors[i]
+  mean /= colors.length
+
+  const out = new Float32Array(colors.length)
+  let norm = 0
+  for (let i = 0; i < colors.length; i++) {
+    out[i] = colors[i] - mean
+    norm += out[i] * out[i]
   }
-  return vec
+  norm = Math.sqrt(norm) || 1
+  for (let i = 0; i < out.length; i++) out[i] /= norm
+  return out
 }
 
-// 평균 Hash
-export function getAverageHashFromLogoColor(colors: Uint8Array): number[] {
-  const len = colors.length / 3
-  const brightness: number[] = []
+export function correlation(a: Float32Array, b: Float32Array): number {
   let sum = 0
-  for (let i = 0; i < len; i++) {
-    const b = (colors[i * 3] + colors[i * 3 + 1] + colors[i * 3 + 2]) / 3 / 255
-    brightness.push(b)
-    sum += b
-  }
-  const avg = sum / len
-  return brightness.map((b) => (b > avg ? 1 : 0))
-}
-
-// 색상 유사도 (0~1)
-export function colorSimilarity(aIdx: number, bIdx: number, a: Uint8Array, b: Uint8Array): number {
-  const dr = a[aIdx] - b[bIdx]
-  const dg = a[aIdx + 1] - b[bIdx + 1]
-  const db = a[aIdx + 2] - b[bIdx + 2]
-
-  const distSq = dr * dr + dg * dg + db * db
-  // 최대 거리 255^2 * 3 = 195075
-  return 1 - distSq / 195075
-}
-
-export function diffLogoColors(a: Uint8Array, b: Uint8Array): number {
-  const len = a.length
-  let sum = 0
-  for (let i = 0; i < len; i += 3) {
-    const dr = a[i] - b[i]
-    const dg = a[i + 1] - b[i + 1]
-    const db = a[i + 2] - b[i + 2]
-    const sim = 1 - (dr * dr + dg * dg + db * db) / 195075 // 255² * 3
-    sum += sim
-  }
-  return sum / (len / 3)
-}
-
-export function diffHash(hashA: number[] | Uint8Array, hashB: number[] | Uint8Array): number {
-  let diff = 0
-  for (let i = 0; i < hashA.length; i++) if (hashA[i] !== hashB[i]) diff++
-  return 1 - diff / hashA.length
-}
-
-// 코사인 유사도
-export function cosineSimilarity(vecA: number[] | Uint8Array, vecB: number[] | Uint8Array): number {
-  let dot = 0,
-    normA = 0,
-    normB = 0
-  for (let i = 0; i < vecA.length; i++) {
-    dot += vecA[i] * vecB[i]
-    normA += vecA[i] * vecA[i]
-    normB += vecB[i] * vecB[i]
-  }
-  if (dot === 0 || normA === 0 || normB === 0) return 0
-  return dot / Math.sqrt(normA * normB)
+  for (let i = 0; i < a.length; i++) sum += a[i] * b[i]
+  return sum
 }

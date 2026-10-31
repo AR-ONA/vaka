@@ -1,61 +1,37 @@
-import { albumArtColors, albumArtHashs } from '../data/albumArtData'
-import {
-  cosineSimilarity,
-  diffHash,
-  diffLogoColors,
-  getAverageHashFromLogoColor,
-  getColorsFromLogo
-} from '../graphics'
+import { albumArtColors } from '../data/albumArtData'
+import { correlation, getColorsFromLogo, normalizeColors } from '../graphics'
+
+// 1위의 스코어가 MIN_SCORE 이상이고, 2등과의 격차가 MIN_MARGIN 이상
+const MIN_SCORE = 0.3
+const MIN_MARGIN = 0.08
 
 export function albumArtOCR(logoColors: Uint8Array): number {
-  if (albumArtColors.length === 0) return -1
-
-  const logoHash = getAverageHashFromLogoColor(logoColors)
+  const logo = normalizeColors(logoColors)
 
   let bestIndex = -1
-  let bestScore = -Infinity
-  let bestSimC = -1
+  let best = -Infinity
+  let second = -Infinity
 
   for (let i = 0; i < albumArtColors.length; i++) {
-    const colors = albumArtColors[i]
-    const hash = albumArtHashs[i]
-
-    const diffC = diffLogoColors(logoColors, colors)
-    const simC = diffC
-    const cosine = cosineSimilarity(logoHash, hash)
-    const diffH = diffHash(logoHash, hash)
-    const score = simC + cosine + diffH
-
-    if (simC > bestSimC) {
+    const score = correlation(logo, albumArtColors[i])
+    if (score > best) {
+      second = best
+      best = score
       bestIndex = i
-      bestScore = score
-      bestSimC = simC
+    } else if (score > second) {
+      second = score
     }
   }
 
-  if (
-    bestSimC > 0.875 ||
-    (bestSimC > 0.865 && bestScore > 2.45) ||
-    (bestSimC > 0.845 && bestScore > 2.48) ||
-    (bestSimC > 0.8 && bestIndex === 197)
-  ) {
-    return bestIndex
-  }
-
-  return -1
+  return best >= MIN_SCORE && best - second >= MIN_MARGIN ? bestIndex : -1
 }
 
-export async function testAlbumArtOCR(): Promise<void> {
-  const logoColors = await getColorsFromLogo('C:\\Users\\heebb\\Downloads\\470.jpg')
+export async function testAlbumArtOCR(imagePath: string): Promise<void> {
+  const logoColors = await getColorsFromLogo(imagePath)
   const startTime = performance.now()
-  const index = await albumArtOCR(logoColors)
+  const index = albumArtOCR(logoColors)
+  const duration = (performance.now() - startTime).toFixed(2)
 
-  if (index === -1) {
-    console.log('No matching AlbumArt')
-  } else {
-    console.log('AlbumArt index:', index)
-  }
-  const endTime = performance.now()
-  const duration = (endTime - startTime).toFixed(2)
+  console.log(index === -1 ? 'No matching AlbumArt' : `AlbumArt index: ${index}`)
   console.log(`Duration: ${duration} ms`)
 }
